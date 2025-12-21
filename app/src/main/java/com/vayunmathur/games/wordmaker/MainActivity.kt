@@ -258,7 +258,7 @@ fun WordGameScreen(crosswordData: CrosswordData, levelDataStore: LevelDataStore,
                                     wordToAnimate = word
                                 } else if (word.length < 3) {
                                     coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Words must be 3 letters", withDismissAction = true, duration = SnackbarDuration.Short)
+                                        snackbarHostState.showSnackbar("Words must be at least 3 letters long", withDismissAction = true, duration = SnackbarDuration.Short)
                                     }
                                 } else if (word.lowercase() in dictionary && word !in bonusWords) {
                                     coroutineScope.launch {
