@@ -41,10 +41,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -467,8 +469,8 @@ fun LetterChooser(
     onLetterPositioned: (char: Char, offset: Offset) -> Unit
 ) {
     val angleStep = 2 * Math.PI / letters.size.toDouble()
-    var letterCenters by remember(letters) { mutableStateOf(mapOf<Char, Offset>()) }
-    var selectedLetters by remember(letters) { mutableStateOf(listOf<Char>()) }
+    val letterCenters = remember(letters) { mutableStateListOf(*List(letters.size, {Offset.Zero}).toTypedArray()) }
+    var selectedLettersIndices by remember(letters) { mutableStateOf(listOf<Int>()) }
     var dragStartOffset by remember(letters) { mutableStateOf(Offset.Zero) }
     var currentDragPosition by remember(letters) { mutableStateOf<Offset?>(null) }
 
@@ -479,7 +481,7 @@ fun LetterChooser(
             text = formedWord.ifEmpty { " " }, // Show a space to maintain height
             modifier = Modifier
                 .padding(bottom = 20.dp)
-                .graphicsLayer(alpha = if (selectedLetters.isNotEmpty()) 1f else 0f)
+                .graphicsLayer(alpha = if (selectedLettersIndices.isNotEmpty()) 1f else 0f)
                 .background(colorScheme.primaryContainer, RoundedCornerShape(8.dp))
                 .padding(horizontal = 24.dp, vertical = 8.dp)
                 .height(38.dp)
@@ -499,34 +501,34 @@ fun LetterChooser(
                     detectDragGestures(
                         onDragStart = { startOffset ->
                             currentDragPosition = startOffset
-                            letterCenters.forEach { (letter, center) ->
+                            letterCenters.forEachIndexed { idx, center ->
                                 if (distance(startOffset, center) < letterCircleRadius) {
-                                    if (letter !in selectedLetters) {
-                                        selectedLetters = selectedLetters + letter
-                                        onWordChanged(selectedLetters.joinToString(""))
+                                    if (idx !in selectedLettersIndices) {
+                                        selectedLettersIndices += idx
+                                        onWordChanged(selectedLettersIndices.map { letters[it] }.joinToString(""))
                                     }
                                 }
                             }
                         },
                         onDrag = { change, _ ->
                             currentDragPosition = change.position
-                            letterCenters.forEach { (letter, center) ->
+                            letterCenters.forEachIndexed { idx, center ->
                                 if (distance(change.position, center) < letterCircleRadius) {
-                                    if (letter !in selectedLetters) {
-                                        selectedLetters = selectedLetters + letter
-                                        onWordChanged(selectedLetters.joinToString(""))
-                                    } else if (selectedLetters.size > 1 && letter == selectedLetters[selectedLetters.size - 2]) {
-                                        selectedLetters = selectedLetters.dropLast(1)
-                                        onWordChanged(selectedLetters.joinToString(""))
+                                    if (idx !in selectedLettersIndices) {
+                                        selectedLettersIndices += idx
+                                        onWordChanged(selectedLettersIndices.map { letters[it] }.joinToString(""))
+                                    } else if (selectedLettersIndices.size > 1 && idx == selectedLettersIndices[selectedLettersIndices.size - 2]) {
+                                        selectedLettersIndices = selectedLettersIndices.dropLast(1)
+                                        onWordChanged(selectedLettersIndices.map { letters[it] }.joinToString(""))
                                     }
                                 }
                             }
                         },
                         onDragEnd = {
-                            if (selectedLetters.isNotEmpty()) {
-                                onWordSubmitted(selectedLetters.joinToString(""))
+                            if (selectedLettersIndices.isNotEmpty()) {
+                                onWordSubmitted(selectedLettersIndices.map { letters[it] }.joinToString(""))
                             }
-                            selectedLetters = emptyList()
+                            selectedLettersIndices = emptyList()
                             currentDragPosition = null
                         }
                     )
@@ -535,10 +537,10 @@ fun LetterChooser(
         ) {
             val primaryColor = colorScheme.primary
             Canvas(modifier = Modifier.fillMaxSize()) {
-                if (selectedLetters.size > 1) {
-                    for (i in 0 until selectedLetters.size - 1) {
-                        val startLetter = selectedLetters[i]
-                        val endLetter = selectedLetters[i + 1]
+                if (selectedLettersIndices.size > 1) {
+                    for (i in 0 until selectedLettersIndices.size - 1) {
+                        val startLetter = selectedLettersIndices[i]
+                        val endLetter = selectedLettersIndices[i + 1]
                         val startCenter = letterCenters[startLetter]
                         val endCenter = letterCenters[endLetter]
                         if (startCenter != null && endCenter != null) {
@@ -552,9 +554,9 @@ fun LetterChooser(
                         }
                     }
                 }
-                val lastLetter = selectedLetters.lastOrNull()
-                val lastCenter = letterCenters[lastLetter]
-                if (lastCenter != null && currentDragPosition != null) {
+                val lastLetter = selectedLettersIndices.lastOrNull()
+                if (lastLetter != null && currentDragPosition != null) {
+                    val lastCenter = letterCenters[lastLetter]
                     drawLine(
                         color = primaryColor,
                         start = lastCenter,
@@ -583,12 +585,12 @@ fun LetterChooser(
                         .offset(x = x, y = y)
                         .size(60.dp)
                         .clip(CircleShape)
-                        .background(if (letter in selectedLetters) colorScheme.primary else colorScheme.secondary)
+                        .background(if (index in selectedLettersIndices) colorScheme.primary else colorScheme.secondary)
                         .onGloballyPositioned { coordinates ->
                             val localOffset = coordinates.localToRoot(Offset.Zero) - dragStartOffset
                             val centerX = localOffset.x + letterCircleRadius
                             val centerY = localOffset.y + letterCircleRadius
-                            letterCenters = letterCenters + (letter to Offset(centerX, centerY))
+                            letterCenters[index] = Offset(centerX, centerY)
                             onLetterPositioned(letter, coordinates.localToRoot(Offset.Zero))
                         },
                     contentAlignment = Alignment.Center
@@ -597,7 +599,7 @@ fun LetterChooser(
                         text = letter.toString(),
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (letter in selectedLetters) colorScheme.onPrimary else colorScheme.onSecondary
+                        color = if (index in selectedLettersIndices) colorScheme.onPrimary else colorScheme.onSecondary
                     )
                 }
             }

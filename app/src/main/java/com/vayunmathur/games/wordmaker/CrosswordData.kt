@@ -36,7 +36,20 @@ data class CrosswordData(
                 val lines = context.assets.open(fileName).bufferedReader().use { it.readLines() }
                 val grid = lines.map { it.replace(' ', '.') }
                 val (words, positions) = extractWordsAndPositions(grid)
-                val chooserLetters = words.flatMap { it.toList() }.distinct().sorted()
+                val chooserLetters = words
+                    .map { word ->
+                        word.groupingBy { it }.eachCount() // Count chars in each word
+                    }
+                    .fold(mutableMapOf<Char, Int>()) { acc, wordMap ->
+                        wordMap.forEach { (char, count) ->
+                            acc[char] = maxOf(acc.getOrDefault(char, 0), count)
+                        }
+                        acc
+                    }
+                    .flatMap { (char, count) ->
+                        List(count) { char } // Create 'count' copies of 'char'
+                    }
+                    .sorted()
 
                 CrosswordData(
                     solutionWords = words.toSet(),
