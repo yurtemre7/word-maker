@@ -254,8 +254,10 @@ fun WordGameScreen(crosswordData: CrosswordData, levelDataStore: LevelDataStore,
                             formedWord = formedWord,
                             onWordChanged = { formedWord = it },
                             onWordSubmitted = { word ->
-                                if (word in crosswordData.solutionWords && word !in foundWords) {
-                                    wordToAnimate = word
+                                if (word in crosswordData.solutionWords) {
+                                    if(word !in foundWords) {
+                                        wordToAnimate = word
+                                    }
                                 } else if (word.length < 3) {
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Words must be at least 3 letters long", withDismissAction = true, duration = SnackbarDuration.Short)
