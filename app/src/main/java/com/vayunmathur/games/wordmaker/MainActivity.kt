@@ -304,7 +304,7 @@ fun WordGameScreen(crosswordData: CrosswordData, levelDataStore: LevelDataStore,
             }
 
             if (showBonusWordsDialog) {
-                BonusWordsDialog(bonusWords = bonusWords) {
+                BonusWordsDialog(bonusWords = bonusWords, dictionary) {
                     showBonusWordsDialog = false
                 }
             }
@@ -377,14 +377,17 @@ fun DefinitionDialog(word: String, definition: String, onDismiss: () -> Unit) {
 }
 
 @Composable
-fun BonusWordsDialog(bonusWords: Set<String>, onDismiss: () -> Unit) {
+fun BonusWordsDialog(bonusWords: Set<String>, dictionary: Dictionary, onDismiss: () -> Unit) {
+    var definitionDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = "Bonus Words") },
         text = {
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 items(bonusWords.toList().sorted()) { word ->
-                    Text(text = word, modifier = Modifier.padding(vertical = 4.dp))
+                    Text(text = word, modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth().clickable{
+                        definitionDialog = Pair(word, dictionary.getDefinition(word)!!)
+                    })
                 }
             }
         },
@@ -396,6 +399,11 @@ fun BonusWordsDialog(bonusWords: Set<String>, onDismiss: () -> Unit) {
             }
         }
     )
+    if(definitionDialog != null) {
+        DefinitionDialog(word = definitionDialog!!.first, definition = definitionDialog!!.second) {
+            definitionDialog = null
+        }
+    }
 }
 
 @Composable
