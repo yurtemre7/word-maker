@@ -136,8 +136,8 @@ data class AnimatedLetter(
 @Composable
 fun WordGameScreen(crosswordData: CrosswordData, levelDataStore: LevelDataStore, currentLevel: Int, dictionary: Dictionary) {
     val snackbarHostState = remember { SnackbarHostState() }
-    var foundWords by remember(currentLevel) { mutableStateOf(setOf<String>()) }
-    var bonusWords by remember(currentLevel) { mutableStateOf(setOf<String>()) }
+    val foundWords by levelDataStore.foundWords.collectAsState(initial = emptySet())
+    val bonusWords by levelDataStore.bonusWords.collectAsState(initial = emptySet())
     var formedWord by remember(currentLevel) { mutableStateOf("") }
     var showBonusWordsDialog by remember(currentLevel) { mutableStateOf(false) }
     val density = LocalDensity.current
@@ -179,7 +179,7 @@ fun WordGameScreen(crosswordData: CrosswordData, levelDataStore: LevelDataStore,
                 jobs.joinAll()
 
                 // After animation
-                foundWords = foundWords + word
+                levelDataStore.addFoundWord(word)
                 wordToAnimate = null
                 animatedLetters = emptyList()
             }
@@ -274,7 +274,7 @@ fun WordGameScreen(crosswordData: CrosswordData, levelDataStore: LevelDataStore,
                                             1f,
                                             animationSpec = tween(durationMillis = 800)
                                         )
-                                        bonusWords = bonusWords + word
+                                        levelDataStore.addBonusWord(word)
                                         animatedWord = null
                                     }
                                 }
