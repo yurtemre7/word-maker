@@ -210,7 +210,7 @@ fun WordGameScreen(
         }
     }
 
-    val isWon = foundWords.containsAll(crosswordData.solutionWords)
+    val isWon = crosswordData.winsWith(foundWords)
 
     Scaffold(Modifier.fillMaxSize()) { innerPadding ->
         Box(

@@ -30,6 +30,18 @@ data class CrosswordData(
         return null
     }
 
+    fun winsWith(foundWords: Set<String>): Boolean {
+        // consider the fact that "unfound words" might actually be made up by the found words
+        val unfoundWords = solutionWords - foundWords
+        val foundLetterPositions = foundWords.map { word ->
+            letterPositions[word]!!
+        }.flatten()
+        val unfoundLetterPositions = unfoundWords.map { word ->
+            letterPositions[word]!!
+        }.flatten()
+        return foundLetterPositions.containsAll(unfoundLetterPositions)
+    }
+
     companion object {
         fun fromAsset(context: Context, fileName: String): CrosswordData? {
             return try {
