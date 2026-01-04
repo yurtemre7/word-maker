@@ -379,6 +379,10 @@ fun WordGameScreen(
                         )
                 )
             }
+            val (size, fontSize) = when(crosswordData.gridStructure[0].length) {
+                in 0..9 -> Pair(35.dp, 18.sp)
+                else -> Pair(25.dp, 14.sp)
+            }
             animatedLetters.forEach { letter ->
                 val progress = letter.progress.value
                 val offset = lerp(letter.startOffset, letter.endOffset, progress)
@@ -386,7 +390,7 @@ fun WordGameScreen(
                 SurfaceText(Modifier.offset { IntOffset(offset.x.toInt(), offset.y.toInt()) },
                     RoundedCornerShape(4.dp),
                     colorScheme.primaryContainer, letter.char.toString(),
-                    Modifier, FontWeight.Bold, 18.sp, 35.dp)
+                    Modifier, FontWeight.Bold, fontSize, size)
             }
         }
     }
@@ -467,11 +471,14 @@ fun CrosswordBoard(
             }
         }
     }
+    val (size, fontSize) = when(crosswordData.gridStructure[0].length) {
+        in 0..9 -> Pair(35.dp, 18.sp)
+        else -> Pair(25.dp, 14.sp)
+    }
 
     Column {
         crosswordData.gridStructure.forEachIndexed { y, rowString ->
             Row {
-                val size = 35.dp
                 rowString.forEachIndexed { x, char ->
                     if (char != '.') {
                         val letter = allCharPositions[Pair(y, x)]
@@ -484,7 +491,7 @@ fun CrosswordBoard(
                                 },
                             RoundedCornerShape(4.dp),
                             if(letter != null) colorScheme.primaryContainer else colorScheme.secondaryContainer,
-                            letter?.toString()?:" ", Modifier, FontWeight.Bold, 18.sp, size)
+                            letter?.toString()?:" ", Modifier, FontWeight.Bold, fontSize, size)
                     } else {
                         Box(Modifier.padding(1.dp).size(size))
                     }
